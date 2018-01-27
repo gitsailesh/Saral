@@ -1,0 +1,188 @@
+<?php
+
+/**
+ * Pagination file
+ * 
+ * This file provides the google like pagination solution
+ * @example http://blog.thesailesh.com/2017/07/pagination.html https://github.com/gitsailesh/paginate
+ * 
+ * @category Saral
+ * @package	Pager
+ * @version		0.1
+ * @since		0.1
+ */
+
+/**
+ * Pager class
+ *
+ * Class is used generate google like pagination links
+ *
+ * @category Saral
+ * @package Pager
+ * @version Release: 0.1
+ * @since 26.Nov.2013
+ * @author Sailesh Jaiswal (jaiswalsailesh@gmail.com)
+ */
+class Pager
+{
+
+    /**
+     *
+     * css class name for links container
+     *
+     * @var string
+     */
+    private $class_pagination = 'pagination';
+
+    /**
+     *
+     * css class name for default style for links
+     *
+     * @var string
+     */
+    private $class_default = 'page';
+
+    /**
+     *
+     * css class name for disabled style for links
+     *
+     * @var string
+     */
+    private $class_disabled = 'disabled';
+
+    /**
+     *
+     * css class name for current/selected link style
+     *
+     * @var string
+     */
+    private $class_current = 'current';
+
+    /**
+     *
+     * used to set the css classes for links
+     *
+     * @param string $pagination            
+     * @param string $default            
+     * @param string $disabled            
+     * @param string $current            
+     */
+    function setStyles($pagination = '', $default = '', $disabled = '', $current = '')
+    {
+        if ($pagination != '') {
+            $this->class_pagination = $pagination;
+        }
+        if ($default != '') {
+            $this->class_default = $default;
+        }
+        if ($disabled != '') {
+            $this->class_disabled = $disabled;
+        }
+        if ($current != '') {
+            $this->class_current = $current;
+        }
+    }
+
+    /**
+     *
+     * generates pagination links
+     *
+     * @param string $url            
+     * @param integer $current_page            
+     * @param integer $total_records            
+     * @param integer $rpp            
+     * @param integer $adjacents            
+     * @return string
+     */
+    function showLinks($url, $current_page, $total_records, $rpp = 5, $adjacents = 2)
+    {
+        $class_pagination = $this->class_pagination;
+        $page = $this->class_default;
+        $current = $this->class_current;
+        $disabled = $this->class_disabled;
+        
+        $pagination = "";
+        $prev = $current_page - 1; // previous page is page - 1
+        $next = $current_page + 1; // next page is page + 1
+        $lastpage = ceil($total_records / $rpp); // lastpage is = total pages / items per page, rounded up.
+        $lpm1 = $lastpage - 1; // last page minus 1
+        $prev = $url . '/' . $prev;
+        if ($lastpage > 1) {
+            $pagination .= "<div class=\"$class_pagination\"><ul>";
+            // previous button
+            if ($current_page > 1)
+                $pagination .= "<li><a href=\"$prev\" class=\"$page\"> &lt;&lt; previous</a></li>";
+            else
+                $pagination .= "<li><span class=\"$disabled\"> &lt;&lt; previous</span></li>";
+            
+            // pages
+            if ($lastpage < 7 + ($adjacents * 2)) // not enough pages to bother breaking it up
+{
+                for ($counter = 1; $counter <= $lastpage; $counter ++) {
+                    $i = $url . '/' . $counter;
+                    if ($counter == $current_page)
+                        $pagination .= "<li class=\"$current\"><a>$counter</a></li>";
+                    else
+                        $pagination .= "<li><a href=\"$i\" class=\"$page\">$counter</a></li>";
+                }
+            } elseif ($lastpage > 5 + ($adjacents * 2)) // enough pages to hide some
+{
+                // close to beginning; only hide later pages
+                if ($current_page < 1 + ($adjacents * 2)) {
+                    for ($counter = 1; $counter < 4 + ($adjacents * 2); $counter ++) {
+                        $i = $url . '/' . $counter;
+                        if ($counter == $current_page)
+                            $pagination .= "<li class=\"$current\"><a>$counter</a></li>";
+                        else
+                            $pagination .= "<li><a href=\"$i\" class=\"$page\">$counter</a></li>";
+                    }
+                    $lpm11 = $url . '/' . $lpm1;
+                    $lastpage1 = $url . '/' . $lastpage;
+                    $pagination .= "<li><a href='javascript: void(0)'>...</a></li>";
+                    $pagination .= "<li><a href=\"$lpm11\" class=\"$page\">$lpm1</a></li>";
+                    $pagination .= "<li><a href=\"$lastpage\" class=\"$page\">$lastpage</a></li>";
+                } // in middle; hide some front and some back
+elseif ($lastpage - ($adjacents * 2) > $current_page && $current_page > ($adjacents * 2)) {
+                    $pagination .= "<li><a href=\"$url/1\" class=\"$page\">1</a></li>";
+                    $pagination .= "<li><a href=\"$url/2\" class=\"$page\">2</a></li>";
+                    $pagination .= "<li><a href='javascript: void(0)'>...</a></li>";
+                    for ($counter = $current_page - $adjacents; $counter <= $current_page + $adjacents; $counter ++) {
+                        $i = $url . '/' . $counter;
+                        if ($counter == $current_page)
+                            $pagination .= "<li class=\"$current\"><a>$counter</a></li>";
+                        else
+                            $pagination .= "<li><a href=\"$i\" class=\"$page\">$counter</a></li>";
+                    }
+                    $lpm11 = $url . '/' . $lpm1;
+                    $lastpage1 = $url . '/' . $lastpage;
+                    $pagination .= "<li><a href='javascript: void(0)'>...</a></li>";
+                    $pagination .= "<li><a href=\"$lpm11\" class=\"$page\">$lpm1</a></li>";
+                    $pagination .= "<li><a href=\"$lastpage1\" class=\"$page\">$lastpage</a></li>";
+                } // close to end; only hide early pages
+else {
+                    $pagination .= "<li><a href=\"$url/1\" class=\"$page\">1</a></li>";
+                    $pagination .= "<li><a href=\"$url/2\" class=\"$page\">2</a></li>";
+                    $pagination .= "<li><a href='javascript: void(0)'>...</a></li>";
+                    for ($counter = $lastpage - (2 + ($adjacents * 2)); $counter <= $lastpage; $counter ++) {
+                        $i = $url . '/' . $counter;
+                        if ($counter == $current_page)
+                            $pagination .= "<li class=\"$current\"><a>$counter</a></li>";
+                        else
+                            $pagination .= "<li><a href=\"$i\" class=\"$page\">$counter</a></li>";
+                    }
+                }
+            }
+            
+            // next button
+            if ($current_page < $counter - 1) {
+                $next = $url . '/' . $next;
+                $pagination .= "<li><a href=\"$next\" class=\"$page\">next &gt;&gt;</a></li>";
+            } else {
+                $pagination .= "<li><span class=\"$disabled\">next &gt;&gt;</span></li>";
+            }
+            $pagination .= "</ul></div>\n";
+        }
+        return $pagination;
+    }
+}
+?>

@@ -1,0 +1,523 @@
+<?php
+
+/**
+ * Database
+ *
+ * This file has class to interact with MySQL server
+ *
+ * @category Saral
+ * @package	Database
+ * @version		0.1
+ * @since		0.1
+ */
+
+/**
+ * Database class
+ *
+ * This class is used to interact with MySQL server
+ *
+ * @category Saral
+ * @package Database
+ * @version Release: 0.1
+ * @since 29.oct.2013
+ * @author Sailesh Jaiswal (jaiswalsailesh@gmail.com)
+ * @todo write automatic query generator
+ */
+class Database extends SaralObject
+{
+
+    private static $the_only_connection = null;
+
+    private static $model_object_count = 0;
+
+    /**
+     *
+     * holds the PDO object
+     *
+     * @var object
+     */
+    private $db;
+
+    /**
+     *
+     * stores the statement generated from prepare query
+     *
+     * @var object
+     */
+    private $stmt;
+
+    /**
+     *
+     * stores config params
+     *
+     * @var array
+     */
+    private $config;
+
+    /**
+     *
+     * @var integer
+     */
+    public $enable_audit;
+
+    /**
+     * store audit table names
+     *
+     * @var array
+     */
+    private $audit_tables;
+
+    /**
+     * establishes connection with mysql
+     */
+    function __construct()
+    {
+        parent::__construct();
+
+        $this->config = $this->getConfig();
+        $audit = $this->config['audit'];
+        $this->enable_audit = (isset($audit['audit_log']) && $audit['audit_log'] ? $audit['audit_log'] : 0);
+        array_shift($audit);
+        $this->audit_tables = array_values($audit);
+
+        if (null === self::$the_only_connection) {
+            $db = $this->config['database settings'];
+            $host = $db['host'];
+            $user = $db['user'];
+            $pword = $db['pword'];
+            $db_name = $db['db'];
+            try {
+                self::$the_only_connection = new PDO("mysql:host=$host;dbname=$db_name", $user, $pword, array(
+                    PDO::MYSQL_ATTR_FOUND_ROWS => true,
+                    PDO::ATTR_PERSISTENT => true
+                ));
+                self::$the_only_connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                self::$the_only_connection->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            } catch (PDOException $e) {
+                throw $e;
+            }
+        }
+
+        $this->db = self::$the_only_connection;
+    }
+
+    /**
+     * exectues query
+     *
+     * @param string $query
+     * @param array $params
+     * @throws Exception
+     * @throws PDOException
+     */
+    function executeQuery($query, $params = array())
+    {
+        $this->stmt = $this->db->prepare($query);
+
+        if (! ($this->stmt)) {
+            throw new Exception('Query failed while preparing');
+        }
+        try {
+            $this->stmt->execute($params);
+        } catch (PDOException $e) {
+            throw $e;
+        }
+    }
+
+    /**
+     * Gets single column from single record, it internally uses executeQuery
+     *
+     * @param string $query
+     * @param array $params
+     * @return string
+     */
+    function getOne($query, $params = array())
+    {
+        $this->executeQuery($query, $params);
+        $column = $this->stmt->fetchColumn();
+        unset($this->stmt);
+        return $column;
+    }
+
+    /**
+     * fetches single record as an object
+     *
+     * @param string $query
+     * @param array $params
+     * @param boolean $array
+     *            whether to return array
+     * @return array|object
+     */
+    function getRecord($query, $params = array(), $array = false)
+    {
+        $this->executeQuery($query, $params);
+
+        $record = array();
+        if ($this->totalRecords() > 0) {
+            if ($array) {
+                $this->stmt->setFetchMode(PDO::FETCH_ASSOC);
+            } else {
+                $this->stmt->setFetchMode(PDO::FETCH_OBJ);
+            }
+            $record = $this->stmt->fetch();
+        }
+        unset($this->stmt);
+        return $record;
+    }
+
+    /**
+     * fetches all the records as array of objects
+     *
+     * @param string $query
+     * @param array $params
+     * @param boolean $array
+     *            whether to return array of arrays
+     * @param boolean $all
+     *            whether to use fetchAll method or while to fetch individual records
+     * @return array
+     */
+    function getRecords($query, $params = array(), $array = false, $all = true)
+    {
+        $this->executeQuery($query, $params);
+
+        $records = array();
+        if ($this->totalRecords() > 0) {
+            if ($array) {
+                $this->stmt->setFetchMode(PDO::FETCH_ASSOC);
+            } else {
+                $this->stmt->setFetchMode(PDO::FETCH_OBJ);
+            }
+            if ($all) {
+                $records = $this->stmt->fetchAll();
+            } else {
+                while (($record = $this->stmt->fetch()) !== false) {
+                    $records[] = $record;
+                }
+            }
+        }
+        unset($this->stmt);
+        return $records;
+    }
+
+    /**
+     *
+     * inserts record
+     *
+     * @param string $table
+     * @param array $params
+     *            eg: array('col1' => 'val1', 'col2' => 'val2')
+     */
+    function insertRecord($table, $params)
+    {
+        $query = '';
+        $fields = $place_holders = array();
+        $values = array_values($params);
+        foreach ($params as $field => $val) {
+            array_push($fields, $field);
+            array_push($place_holders, '?');
+        }
+
+        $query = "INSERT INTO $table(" . implode(", ", $fields) . ") VALUES(" . implode(", ", $place_holders) . ")";
+        $this->executeQuery($query, $values);
+
+        if (! in_array($table, $this->audit_tables)) {
+            $this->ID = $this->db->lastInsertId();
+        }
+        if ($this->enable_audit) {
+            $record_id = $this->db->lastInsertId();
+            if (! in_array($table, $this->audit_tables)) {
+                $key = $this->getPrimaryKey($table);
+                $primary = array(
+                    $key => $record_id
+                );
+                $this->doAudit($table, 'insert', array(), $params, $primary);
+            }
+        }
+    }
+
+    /**
+     * updates record(s)
+     *
+     * @param string $table
+     * @param array $params
+     *            eg: array('col1' => 'val1', 'col2' => 'val2')
+     * @param array $where
+     *            criteria eg: $where = array('col1' => 'val1') or
+     *            $where = array('col1' => array('op' => 'AND', 'value' => 'val1'), 'col2' => array('value' => 'val2'))
+     * @param array $multiple
+     *            to update with multiple values (mostly used for IN operator)
+     * @param string $comment
+     *            for additional information for audit
+     */
+    function updateRecord($table, $params, $where, $multiple = array(), $comment = '')
+    {
+        $query = '';
+        $fields = array();
+        $values = array_values($params);
+        foreach ($params as $field => $val) {
+            array_push($fields, $field . ' = ?');
+        }
+
+        $where_clause = array();
+        $where_values = array();
+        foreach ($where as $col => $val) {
+            if (is_array($val)) {
+                if (isset($val['op'])) {
+                    array_push($where_clause, $col . ' ' . $val['op'] . ' ? ');
+                }
+                array_push($values, $val['value']);
+                array_push($where_values, $val['value']);
+            } else {
+                array_push($where_clause, $col . ' = ?');
+                array_push($values, $val);
+                array_push($where_values, $val);
+            }
+        }
+
+        if (count($multiple)) {
+            foreach ($multiple as $column => $mvalues) {
+                if (count($mvalues)) {
+                    $placeholders = implode(", ", array_fill(0, count($mvalues), '?'));
+                    array_push($where_clause, $column . ' IN (' . $placeholders . ')');
+                    $values = array_merge($values, $mvalues);
+                }
+            }
+        }
+
+        /**
+         * audit logging starts
+         */
+        if ($this->enable_audit) {
+            if (! in_array($table, $this->audit_tables)) {
+                $key = $this->getPrimaryKey($table);
+                $key_values = $this->getRecords("SELECT $key FROM $table WHERE " . implode(" AND ", $where_clause), $where_values);
+                foreach ($key_values as $kv) {
+                    foreach ($kv as $k => $v) {
+                        $old_data = $this->getRecord("SELECT * FROM $table WHERE $k = $v", array(), true);
+
+                        $primary = array(
+                            $k => $v
+                        );
+
+                        $this->doAudit($table, 'update', $old_data, $params, $primary, $comment);
+                    }
+                }
+            }
+        }
+        /**
+         * audit logging ends
+         */
+        $query = "UPDATE $table SET " . implode(", ", $fields) . " WHERE " . implode(" AND ", $where_clause);
+        $this->executeQuery($query, $values);
+    }
+
+    /**
+     * deletes record
+     *
+     * @param string $table
+     * @param array $params
+     *            eg: array('col1' => 'val1', 'col2' => 'val2')
+     * @param string $comment
+     */
+    function deleteRecord($table, $params, $comment = '')
+    {
+        $where_clause = array();
+        $values = array_values($params);
+        foreach ($params as $col => $val) {
+            array_push($where_clause, $col . ' = ?');
+        }
+
+        /**
+         * audit logging starts
+         */
+        if ($this->enable_audit) {
+            if (! in_array($table, $this->audit_tables)) {
+                $key = $this->getPrimaryKey($table);
+                $key_values = $this->getRecords("SELECT $key FROM $table WHERE " . implode(" AND ", $where_clause), $values);
+                foreach ($key_values as $kv) {
+                    foreach ($kv as $k => $v) {
+                        $old_data = $this->getRecord("SELECT * FROM $table WHERE $k = $v", array(), true);
+
+                        $primary = array(
+                            $k => $v
+                        );
+
+                        $this->doAudit($table, 'delete', $old_data, array(), $primary, $comment);
+                    }
+                }
+            }
+        }
+        /**
+         * audit logging ends
+         */
+
+        $query = "DELETE FROM $table  WHERE " . implode(" AND ", $where_clause);
+        $this->executeQuery($query, $values);
+    }
+
+    /**
+     *
+     * sends the automatically generated id for the recent insert query
+     *
+     * @return integer
+     */
+    function getRecordID()
+    {
+        // return $this->db->lastInsertId();
+        return $this->ID;
+    }
+
+    /**
+     *
+     * count the no. of records in the resultset for recently executed select query
+     *
+     * @return integer
+     */
+    function totalRecords()
+    {
+        return $this->stmt->rowCount();
+    }
+
+    /**
+     *
+     * returns the unparsed query
+     *
+     * @return string
+     */
+    function showQuery()
+    {
+        return $this->stmt->queryString;
+    }
+
+    /**
+     * used to force close the db connection
+     */
+    function dbClose()
+    {
+        $this->db = null;
+    }
+
+    /**
+     * start transaction
+     */
+    function start()
+    {
+        $this->db->beginTransaction();
+    }
+
+    /**
+     * commit
+     */
+    function save()
+    {
+        $this->db->commit();
+    }
+
+    /**
+     * rollback
+     */
+    function undo()
+    {
+        $this->db->rollBack();
+    }
+
+    /**
+     * stores data in audit tables
+     *
+     * @param string $table
+     * @param string $action
+     * @param array $old_data
+     * @param array $new_data
+     * @param string $primary
+     *            ;; primary key column name
+     * @param number $user_id
+     * @param string $comment
+     */
+    function doAudit($table, $action, $old_data = array(), $new_data = array(), $primary, $comment = '')
+    {
+        $user_id = $this->getSession('UserID') ? $this->getSession('UserID') : 0;
+
+        if (! isset($this->config['audit'])) {
+            throw new Exception('Audit configuration missing');
+        }
+
+        foreach ($primary as $pkc => $pkv) {
+            $primary_col_name = $pkc;
+            $primary_col_val = $pkv;
+        }
+        $now = date('Y-m-d H:i:s');
+
+        $this->insertRecord($this->config["audit"]['table_audit_session'], array(
+            "UserID" => $user_id,
+            "CreatedOn" => $now
+        ));
+        $session_id = $this->db->lastInsertId();
+
+        $this->insertRecord($this->config['audit']['table_audit_transaction'], array(
+            'SessionID' => $session_id,
+            'UpdateComment' => $comment,
+            'CreatedOn' => $now,
+            'TaskID' => $action
+        ));
+        $tran_seq_number = $this->db->lastInsertId();
+
+        $this->insertRecord($this->config['audit']['table_audit_table_info'], array(
+            'TranSeqNumber' => $tran_seq_number,
+            'TableName' => $table,
+            'PKey' => $primary_col_name,
+            'PValue' => $primary_col_val
+        ));
+        $tbl_seq_number = $this->db->lastInsertId();
+
+        foreach ($new_data as $key => $val) {
+
+            $old_value = isset($old_data[$key]) ? $old_data[$key] : NULL;
+            $new_value = $val;
+            if (trim($new_value) != trim($old_value)) {
+                $this->insertRecord($this->config['audit']['table_audit_fields'], array(
+                    'TableSeqNumber' => $tbl_seq_number,
+                    'TblColumnName' => $key,
+                    'OldValue' => $old_value,
+                    'NewValue' => $new_value
+                ));
+            }
+        }
+
+        if (count($new_data) == 0) {
+            foreach ($old_data as $key => $val) {
+                $old_value = $val;
+                $new_value = NULL;
+
+                $this->insertRecord($this->config['audit']['table_audit_fields'], array(
+                    'TableSeqNumber' => $tbl_seq_number,
+                    'TblColumnName' => $key,
+                    'OldValue' => $old_value,
+                    'NewValue' => $new_value
+                ));
+            }
+        }
+    }
+
+    /**
+     * finds primary key column for a given table
+     *
+     * @param string $table
+     * @return string
+     */
+    private function getPrimaryKey($table)
+    {
+        $record = $this->getRecord("SHOW KEYS FROM $table WHERE Key_name = 'PRIMARY'");
+        return $record->Column_name;
+    }
+
+    /**
+     * destructor
+     */
+    public function __destruct()
+    {
+        self::$model_object_count --;
+        if (0 == self::$model_object_count) {
+            $this->dbClose();
+            self::$the_only_connection = null;
+        }
+    }
+}

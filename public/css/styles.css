@@ -1,0 +1,13 @@
+.dataTables_wrapper .dataTables_paginate .paginate_button{
+	padding: 0px !important;
+}
+
+span.required{
+	font-weight: 500;
+	color: #d00;
+}
+
+label.error{
+	color: #d00;
+	font-weight: normal;
+}

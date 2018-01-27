@@ -1,0 +1,1 @@
+This folder is used to store css, images, scripts files. It can be access via $this->getPublicURL()

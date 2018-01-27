@@ -1,0 +1,84 @@
+<style>
+.form-group {
+    margin-bottom: 15px !important;
+}
+</style>
+<form role="form" name="UserForm" id="UserForm" method="post">
+    <div class="modal-header">
+        <button aria-hidden="true" data-dismiss="modal" class="close"
+            type="button"
+        >&times;</button>
+        <h4 class="modal-title"><?php
+        echo $user_id ? 'Update User' : 'Add User';
+        ?></h4>
+    </div>
+    <div class="modal-body">
+    	<div class='row'>
+            <div class="col-md-8 col-sm-12 col-xs-12">
+            	<div class='form-group'>
+                    <label for="Name">Name <span class="required">*</span></label>
+                <?php
+                $name = (isset($user['Username']) ? $user['Username'] : '');
+                echo <<<SARAL
+                        <input type="text" class="form-control" id="Username" placeholder="Enter Your Name" name="Username" maxlength='50' value="{$name}" />
+SARAL;
+                ?>
+
+               </div>
+            </div>
+       </div>
+       <div class='row'>
+            <div class="col-md-8 col-sm-12 col-xs-12">
+            <div class='form-group'>
+                    <label for="EmailID">Email <span class="required">*</span></label>
+                  <?php
+                $email = (isset($user['EmailID']) ? $user['EmailID'] : '');
+                echo <<<SARAL
+                    <input type='text' class='form-control' id='EmailID' name='EmailID' placeholder='Enter Email' maxlength='50' value='{$email}' />
+SARAL;
+                ?>
+
+                    </div>
+            </div>
+        </div>
+        <?php
+        if ($user_id == 0) {
+            ?>
+       <div class='row'>
+            <div class="col-md-8 col-sm-12 col-xs-12">
+                <div class='form-group'>
+					<label for="Password">Password <span class="required">*</span></label>
+                    <input type='password' name='Password' id='Password' class='form-control' placeholder='Enter Password' />
+                </div>
+            </div>
+       </div>
+       <div class='row'>
+            <div class="col-md-8 col-sm-12 col-xs-12">
+                <div class='form-group'>
+					<label for="ConfirmPassword">Confirm Password <span class="required">*</span></label>
+                    <input type='password' name='ConfirmPassword' id='ConfirmPassword' class='form-control' placeholder='Re-enter Password' />
+                </div>
+            </div>
+       </div>
+       <?php
+        }
+        ?>
+    </div>
+    <div class="modal-footer">
+        <div class="row">
+            <div class='col-xs-6'>
+                <button class='btn btn-default pull-left'
+                    aria-hidden="true" data-dismiss="modal"
+                >Close</button>
+            </div>
+            <div class='col-xs-6'>
+            <?php
+            echo <<<SARAL
+                <input type='hidden' name='UserID' id='UserID' value='{$user_id}' />
+SARAL;
+            ?>
+                 <input name="UserSubmit" id="UserSubmit" class="btn btn-info" type="submit" value='Submit' />
+            </div>
+        </div>
+    </div>
+</form>
