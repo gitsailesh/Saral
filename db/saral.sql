@@ -64,6 +64,8 @@ CREATE TABLE `users` (
   `UserID` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `Username` varchar(45) COLLATE utf8_unicode_ci NOT NULL,
   `Password` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `EmailID` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
+  `CreatedOn` datetime NOT NULL,
   PRIMARY KEY (`UserID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
