@@ -71,11 +71,11 @@ class SaralObject
         if (! defined('SITE_ROOT'))
             define('SITE_ROOT', $root);
         $this->config = parse_ini_file($root . '/app/config.ini', true);
-        
+
         $cwd = trim(str_replace(DIRECTORY_SEPARATOR, "/", dirname(dirname(__FILE__))), '/');
         $root = trim(str_replace(DIRECTORY_SEPARATOR, "/", $_SERVER['DOCUMENT_ROOT']), '/');
         $croot = trim(str_replace($root, '', $cwd), '/');
-        
+
         $request_uri = $_SERVER['REQUEST_URI'];
         $question_mark = strrpos($request_uri, '?');
         $query_string = substr($request_uri, $question_mark + 1);
@@ -83,7 +83,7 @@ class SaralObject
         $request_uri = $_SERVER['REQUEST_URI'];
         $question_mark_pos = strpos($request_uri, '?');
         $request_uri = ($question_mark_pos ? substr($request_uri, 0, $question_mark_pos) : $request_uri);
-        
+
         if ($croot == '') {
             $uri = trim($request_uri, '/');
         } else {
@@ -95,7 +95,7 @@ class SaralObject
     /**
      * used to set params
      *
-     * @param unknown $params            
+     * @param unknown $params
      */
     public function setParams($params)
     {
@@ -105,7 +105,7 @@ class SaralObject
     /**
      * used to redirect to provided url
      *
-     * @param string $url            
+     * @param string $url
      */
     public function redirect($url)
     {
@@ -115,7 +115,7 @@ class SaralObject
     /**
      * read the configuration variable from class variable config
      *
-     * @param string $var            
+     * @param string $var
      * @return string
      */
     public function getConfig($section = '', $var = '')
@@ -134,7 +134,7 @@ class SaralObject
     /**
      * read the message from messages.ini file
      *
-     * @param string $var            
+     * @param string $var
      * @return string
      */
     function getMessage($var = '')
@@ -151,8 +151,8 @@ class SaralObject
     /**
      * used to send data to REST URL with data (optional) using POST method and returns an array
      *
-     * @param string $url            
-     * @param array $data            
+     * @param string $url
+     * @param array $data
      * @return array
      */
     function getRESTResponse($url, $data = array())
@@ -171,7 +171,7 @@ class SaralObject
         $output = curl_exec($ch);
         curl_errno($ch);
         curl_close($ch);
-        
+
         $array = json_decode($output);
         return $array;
     }
@@ -179,7 +179,7 @@ class SaralObject
     /**
      * retuns the value from params (URI segment) for given index
      *
-     * @param number $index            
+     * @param number $index
      * @return boolean|mixed
      */
     function getParam($index)
@@ -219,7 +219,7 @@ class SaralObject
     /**
      * read the session value based on variable passed
      *
-     * @param string $var            
+     * @param string $var
      * @return mixed|boolean
      */
     function getSession($var)
@@ -234,8 +234,8 @@ class SaralObject
     /**
      * sets the session value
      *
-     * @param string $var            
-     * @param mixed $val            
+     * @param string $var
+     * @param mixed $val
      */
     function setSession($var, $val)
     {
@@ -245,7 +245,7 @@ class SaralObject
     /**
      * read the cookie value for the given variable
      *
-     * @param string $var            
+     * @param string $var
      * @return mixed null
      */
     function getCookie($var)
@@ -260,7 +260,7 @@ class SaralObject
     /**
      * removes the session variable(s)
      *
-     * @param mixed $var            
+     * @param mixed $var
      */
     function removeSession($var)
     {
@@ -276,7 +276,7 @@ class SaralObject
     /**
      * reads the get data
      *
-     * @param string $var            
+     * @param string $var
      * @return array
      */
     function getData($var)
@@ -297,21 +297,21 @@ class SaralObject
     /**
      * logs the info
      *
-     * @param string $str            
+     * @param string $str
      */
     function logInfo($str = false)
     {
         $log_folder = $this->getRootPath() . '/logs';
         $file_name = $log_folder . "/log_" . date("Y-m-d") . ".log";
-        
+
         $date = date("Y-m-d H:i:s");
-        
+
         if ($str === false) {
             $str = str_repeat('-', 32);
         } else {
             $str = $date . ": " . $str;
         }
-        
+
         if (! file_exists($log_folder)) {
             mkdir($log_folder, 0777);
         }
@@ -328,7 +328,7 @@ class SaralObject
     /**
      * converts an object to array
      *
-     * @param object $object            
+     * @param object $object
      * @return array
      */
     function objectToArray($object)
@@ -338,7 +338,7 @@ class SaralObject
             // with get_object_vars function
             $d = get_object_vars($object);
         }
-        
+
         if (is_array($object)) {
             /*
              * Return array converted to object Using __FUNCTION__ (Magic constant) for recursive call
@@ -353,20 +353,20 @@ class SaralObject
     /**
      * fetches latitude & longitude for given address
      *
-     * @param string $address            
+     * @param string $address
      * @return array
      */
     function getLatLong($address)
     {
         $prep_addr = str_replace(' ', '+', $address);
-        
+
         $geocode = file_get_contents('http://maps.google.com/maps/api/geocode/json?address=' . $prep_addr . '&sensor=false');
-        
+
         $output = json_decode($geocode);
-        
+
         $lat = $output->results[0]->geometry->location->lat;
         $long = $output->results[0]->geometry->location->lng;
-        
+
         return array(
             "latitude" => $lat,
             "longitude" => $long
@@ -378,39 +378,39 @@ class SaralObject
      * Formats accept YYYY-MM-DD HH:II:SS. If holidays has to be excluded provide value for $holidays.
      * To exclude weekends (Saturday, Sunday) set $exclude_weekend to true
      *
-     * @param string $date1            
-     * @param string $date2            
-     * @param boolean $exclude_weekend            
-     * @param array $holidays            
+     * @param string $date1
+     * @param string $date2
+     * @param boolean $exclude_weekend
+     * @param array $holidays
      * @return number
      */
     function dateDifference($date1, $date2, $exclude_weekend = false, $holidays = array())
     {
         $start = new DateTime($date1);
         $end = new DateTime($date2);
-        
+
         $end->modify('+1 day');
-        
+
         $interval = $end->diff($start);
-        
+
         // total days
         $days = $interval->days;
         if (! $exclude_weekend && count($holidays) == 0) {
             return $days;
         }
-        
+
         // create an iterateable period of date (P1D equates to 1 day)
         $period = new DatePeriod($start, new DateInterval('P1D'), $end);
-        
+
         foreach ($period as $dt) {
             $curr = $dt->format('D');
-            
+
             if (count($holidays)) {
                 if (in_array($dt->format('Y-m-d'), $holidays)) {
                     $days --;
                 }
             }
-            
+
             if ($exclude_weekend) {
                 // substract if Saturday or Sunday
                 if ($curr == 'Sat' || $curr == 'Sun') {
@@ -441,7 +441,7 @@ class SaralObject
         $cwd = trim(str_replace(DIRECTORY_SEPARATOR, "/", dirname(dirname(__FILE__))), '/');
         $root = trim(str_replace(DIRECTORY_SEPARATOR, "/", $_SERVER['DOCUMENT_ROOT']), '/');
         $croot = trim(str_replace($root, '', $cwd), '/');
-        
+
         $site_url = @$_SERVER['SERVER_NAME'];
         $project_folder = ($croot == '') ? '/' : '/' . $croot . '/';
         return ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https' : 'http') . '://' . $site_url . $project_folder;
@@ -473,8 +473,8 @@ class SaralObject
      * includes plugin from plugins folder.
      * if $class is true then object is returned
      *
-     * @param string $plugin            
-     * @param boolean $class            
+     * @param string $plugin
+     * @param boolean $class
      * @return object
      */
     function loadPlugin($plugin, $class = false)
@@ -490,7 +490,7 @@ class SaralObject
     /**
      * generates hash password
      *
-     * @param string $str            
+     * @param string $str
      * @return string
      */
     function hashPassword($str)
@@ -501,8 +501,8 @@ class SaralObject
     /**
      * verifies the password against the hash
      *
-     * @param string $password            
-     * @param string $hash            
+     * @param string $password
+     * @param string $hash
      * @return boolean
      */
     function verifyPassword($password, $hash)
@@ -513,7 +513,7 @@ class SaralObject
     /**
      * generate token that can be used for hand shake
      *
-     * @param number $length            
+     * @param number $length
      * @return string
      */
     function generateToken($length)
@@ -524,8 +524,8 @@ class SaralObject
     /**
      * generate random code based on the $type
      *
-     * @param number $size            
-     * @param number $type            
+     * @param number $size
+     * @param number $type
      * @return number|string
      */
     function generateCode($size, $type = 0)
@@ -550,10 +550,10 @@ class SaralObject
     /**
      * generate thumbnail
      *
-     * @param string $source            
-     * @param string $destination            
-     * @param number $width            
-     * @param number $height            
+     * @param string $source
+     * @param string $destination
+     * @param number $width
+     * @param number $height
      * @return bool
      */
     function generateThumb($source, $destination, $width = 0, $height = 0)
@@ -598,7 +598,7 @@ class SaralObject
         } else {
             return false;
         }
-        
+
         $target_image = imagecreatetruecolor($width, $height);
         imagecopyresampled($target_image, $source_image, 0, 0, 0, 0, $width, $height, $source_width, $source_height);
         $image_function = "image" . $format;
@@ -614,14 +614,14 @@ class SaralObject
     /**
      * loads the model (returns the object of the model)
      *
-     * @param string $model            
+     * @param string $model
      * @return object
      */
     function loadModel($model)
     {
         $models = explode("/", $model);
         $model = array_pop($models);
-        
+
         $path = $this->getRootPath() . 'app/' . implode("/", $models) . "/models/" . $model . '.php';
         require_once ($path);
         return new $model();
@@ -630,10 +630,10 @@ class SaralObject
     /**
      * generate path
      *
-     * @param string $what            
-     * @param string $location            
-     * @param array $params            
-     * @param array $data            
+     * @param string $what
+     * @param string $location
+     * @param array $params
+     * @param array $data
      */
     function recurPath($what, $location = '', $params, &$data)
     {
@@ -647,13 +647,13 @@ class SaralObject
                     $this->recurPath($what, $location, $params, $data);
                 }
             }
-            
+
             if (file_exists($root . $location . '/' . $what)) {
                 $location .= '/' . $what;
                 $file_name = str_replace(" ", "", ucwords(str_replace("-", " ", $param)));
                 $file_name2 = str_replace(" ", "", strtoupper(str_replace("-", " ", $param)));
                 if (file_exists($root . $location . '/' . $file_name . '.php')) {
-                    
+
                     if (count($params)) {
                         $method = str_replace(" ", "", ucwords(str_replace("-", " ", array_shift($params))));
                     }
@@ -666,7 +666,7 @@ class SaralObject
                     }
                     return;
                 } else if (file_exists($root . $location . '/' . $file_name2 . '.php')) {
-                    
+
                     if (count($params)) {
                         $method = str_replace(" ", "", ucwords(str_replace("-", " ", array_shift($params))));
                     }
@@ -689,7 +689,7 @@ class SaralObject
     /**
      * gives time ago in detailed
      *
-     * @param string $date_time            
+     * @param string $date_time
      * @return string
      */
     function timeAgo($date_time)
@@ -697,7 +697,7 @@ class SaralObject
         $then = new DateTime($date_time);
         $now = new DateTime();
         $delta = $now->diff($then);
-        
+
         $quantities = array(
             'year' => $delta->y,
             'month' => $delta->m,
@@ -706,7 +706,7 @@ class SaralObject
             'minute' => $delta->i,
             'second' => $delta->s
         );
-        
+
         $str = '';
         foreach ($quantities as $unit => $value) {
             if ($value == 0)
@@ -724,8 +724,8 @@ class SaralObject
     /**
      * coverts the given date time to GMT/UTC based on timezone/daylight saving offset in seconds provided
      *
-     * @param string $date            
-     * @param string $value            
+     * @param string $date
+     * @param string $value
      * @param string $is_timezone
      *            if $is_timezone is true then $value would be timezone (eg: asia/Kolkata)
      *            if $is_timezone is false then $value would be +19800 (+5:30 hrs)
@@ -734,21 +734,21 @@ class SaralObject
     function getGMT($date, $value, $is_timezone = true)
     {
         date_default_timezone_set("UTC");
-        
+
         if ($is_timezone) {
             $daylight_savings_offset_in_seconds = timezone_offset_get(timezone_open($value), new DateTime());
         } else {
             $daylight_savings_offset_in_seconds = $value;
         }
-        
+
         return $new_date = date('Y-m-d H:i:s', strtotime('-' . $daylight_savings_offset_in_seconds . ' seconds', strtotime($date)));
     }
 
     /**
      * coverts the given date time in GMT/UTC to local date time on timezone/daylight saving offset in seconds provided
      *
-     * @param string $date            
-     * @param string $value            
+     * @param string $date
+     * @param string $value
      * @param boolean $is_timezone
      *            if $is_timezone is true then $value would be timezone (eg: asia/Kolkata)
      *            if $is_timezone is false then $value would be +19800 (+5:30 hrs)
@@ -768,10 +768,10 @@ class SaralObject
     /**
      * to find distance between co-ordinates in $units
      *
-     * @param float $lat1            
-     * @param float $lon1            
-     * @param float $lat2            
-     * @param float $lon2            
+     * @param float $lat1
+     * @param float $lon1
+     * @param float $lat2
+     * @param float $lon2
      * @param string $unit
      *            $unit = M -> in Meters $unit = N -> in Miles $unit = K -> in Kilometers
      * @return number
@@ -784,7 +784,7 @@ class SaralObject
         $dist = rad2deg($dist);
         $miles = $dist * 60 * 1.1515;
         $unit = strtoupper($unit);
-        
+
         if ($unit == "K") {
             return ($miles * 1.609344);
         } else if ($unit == "N") {
@@ -799,7 +799,7 @@ class SaralObject
     /**
      * url decode
      *
-     * @param string $str            
+     * @param string $str
      * @return string
      */
     function decode($str)
@@ -810,7 +810,7 @@ class SaralObject
     /**
      * url encode
      *
-     * @param string $str            
+     * @param string $str
      * @return string
      */
     function encode($str)
@@ -894,8 +894,8 @@ class SaralObject
     /**
      * converts bytes to human readable
      *
-     * @param number $bytes            
-     * @param number $precision            
+     * @param number $bytes
+     * @param number $precision
      * @return string
      */
     protected function convertBytes($bytes, $precision = 2)
@@ -909,7 +909,7 @@ class SaralObject
             'PB',
             'EB'
         );
-        
+
         return @round($bytes / pow(1024, ($i = floor(log($bytes, 1024)))), $precision) . ' ' . $unit[$i];
     }
 
@@ -928,14 +928,14 @@ class SaralObject
         $result .= substr(str_shuffle($upper_alpha), 2, 2);
         $result .= substr(str_shuffle($special_char), 1, 1);
         $result .= substr(str_shuffle($numbers), 2, 2);
-        
+
         return $result;
     }
 
     /**
      * creates object for the class
      *
-     * @param string $class_name            
+     * @param string $class_name
      * @return object
      */
     protected function getInstance($class_name)
@@ -968,43 +968,43 @@ class SaralObject
      *
      * @author Sailesh Jaiswal
      * @since 22-06-2017
-     * @param string $to            
-     * @param string $subject            
-     * @param string $message            
-     * @param string $attachment            
-     * @param string $from_name            
-     * @param string $from_email            
+     * @param string $to
+     * @param string $subject
+     * @param string $message
+     * @param string $attachment
+     * @param string $from_name
+     * @param string $from_email
      */
     protected function sendEmail($to, $subject, $message, $attachment = '', $from_name = '', $from_email = '')
     {
         $smtp = $this->config['smtp'];
-        
+
         $this->loadPlugin("PHPMailer/PHPMailerAutoload");
-        
+
         $mail = new PHPMailer();
         $mail->isSMTP();
         $mail->SMTPSecure = $smtp['secure'];
-        
+
         // smtp host
         if (trim($smtp['host']))
             $mail->Host = $smtp['host'];
-        
+
         // smtp port
         if (trim($smtp['port']))
             $mail->Port = $smtp['port'];
-        
+
         // auth
         if (trim($smtp['auth']))
             $mail->SMTPAuth = $smtp['auth'];
-        
+
         // username
         if (trim($smtp['username']))
             $mail->Username = $smtp['username'];
-        
+
         // password
         if (trim($smtp['password']))
             $mail->Password = $smtp['password'];
-        
+
         // attachment
         if (trim($attachment)) {
             $fp = fopen($attachment, "rb");
@@ -1012,20 +1012,20 @@ class SaralObject
             $file = chunk_split(base64_encode(file_get_contents($attachment)));
             $mail->addAttachment($attachment);
         }
-        
+
         // form name/sender name
         if ($from_name == '')
             $from_name = $smtp['from_name'];
-        
+
         // from email/sender email
         if ($from_email == '')
             $from_email = $smtp['from_email'];
-        
+
         $mail->setFrom($from_email, $from_name);
         $mail->addAddress($to);
         $mail->Subject = $subject;
         $mail->msgHTML($message);
-        
+
         if (! $mail->send())
             $this->logInfo($mail->ErrorInfo);
     }
@@ -1033,7 +1033,7 @@ class SaralObject
     /**
      * force download file
      *
-     * @param string $file_path            
+     * @param string $file_path
      */
     function downloadFile($file_path)
     {
@@ -1084,12 +1084,12 @@ if (! function_exists('password_verify')) {
         if (! is_string($ret) || strlen($ret) != strlen($hash) || strlen($ret) <= 13) {
             return false;
         }
-        
+
         $status = 0;
         for ($i = 0; $i < strlen($ret); $i ++) {
             $status |= (ord($ret[$i]) ^ ord($hash[$i]));
         }
-        
+
         return $status === 0;
     }
 }
@@ -1124,7 +1124,7 @@ if (! function_exists('password_hash')) {
         }
         switch ($algo) {
             case PASSWORD_BCRYPT:
-                
+
                 // Note that this is a C constant, but not exposed to PHP, so we don't define it here.
                 $cost = 10;
                 if (isset($options['cost'])) {
@@ -1210,15 +1210,15 @@ if (! function_exists('password_hash')) {
             $salt = str_replace('+', '.', base64_encode($buffer));
         }
         $salt = substr($salt, 0, $required_salt_len);
-        
+
         $hash = $hash_format . $salt;
-        
+
         $ret = crypt($password, $hash);
-        
+
         if (! is_string($ret) || strlen($ret) <= 13) {
             return false;
         }
-        
+
         return $ret;
     }
 }
