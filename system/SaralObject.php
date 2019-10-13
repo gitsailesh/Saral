@@ -76,11 +76,10 @@ class SaralObject
         $root = trim(str_replace(DIRECTORY_SEPARATOR, "/", $_SERVER['DOCUMENT_ROOT']), '/');
         $croot = trim(str_replace($root, '', $cwd), '/');
 
-        $request_uri = $_SERVER['REQUEST_URI'];
+        $request_uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
         $question_mark = strrpos($request_uri, '?');
         $query_string = substr($request_uri, $question_mark + 1);
         parse_str($query_string, $_GET);
-        $request_uri = $_SERVER['REQUEST_URI'];
         $question_mark_pos = strpos($request_uri, '?');
         $request_uri = ($question_mark_pos ? substr($request_uri, 0, $question_mark_pos) : $request_uri);
 
@@ -95,7 +94,7 @@ class SaralObject
     /**
      * used to set params
      *
-     * @param unknown $params
+     * @param integer $params
      */
     public function setParams($params)
     {
@@ -1071,7 +1070,7 @@ if (! function_exists('password_verify')) {
      *            The password to verify
      * @param string $hash
      *            The hash to verify against
-     *            
+     *
      * @return boolean If the password matches the hash
      */
     function password_verify($password, $hash)
@@ -1105,7 +1104,7 @@ if (! function_exists('password_hash')) {
      *            The algorithm to use (Defined by PASSWORD_* constants)
      * @param array $options
      *            The options for the algorithm to use
-     *            
+     *
      * @return string false hashed password, or false on error.
      */
     function password_hash($password, $algo, array $options = array())
