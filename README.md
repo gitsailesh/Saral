@@ -1,2 +1,2 @@
 # Saral
-Saral (means simple in Hindi Language) is a light weighted PHP HMVC framework.
+Saral (means 'SIMPLE' in Hindi language) is a light weighted PHP HMVC framework.
